@@ -148,6 +148,7 @@ def build(job_id: str):
                 "-PsitePackage=" + job["package"], "-PsiteVersion=" + str(job["version"]),
             ], cwd=work, env=env, stdout=log, stderr=subprocess.STDOUT, timeout=1800)
         if result.returncode:
+            app.logger.error("ANDROID_BUILD_FAILED id=%s\n%s", job_id, (output / "build.log").read_text()[-10000:])
             raise RuntimeError("The Android build failed. Its build log is available below.")
         apk = work / "app/build/outputs/apk/release/app-release.apk"
         if not apk.is_file():
