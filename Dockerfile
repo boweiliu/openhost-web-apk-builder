@@ -9,7 +9,7 @@ RUN python -c "import urllib.request; urllib.request.urlretrieve('https://dl.goo
     && unzip -q /tmp/gradle.zip -d /opt \
     && cp -a /opt/gradle-9.3.1/. /opt/gradle/ \
     && yes | /opt/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses >/dev/null \
-    && /opt/android-sdk/cmdline-tools/latest/bin/sdkmanager 'platforms;android-37' 'build-tools;36.0.0' 'platform-tools' \
+    && /opt/android-sdk/cmdline-tools/latest/bin/sdkmanager 'platforms;android-37.0' 'build-tools;36.0.0' 'platform-tools' \
     && rm -f /tmp/android.zip /tmp/gradle.zip
 WORKDIR /app
 COPY requirements.txt .
