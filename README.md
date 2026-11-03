@@ -41,7 +41,7 @@ The builder never fetches a submitted site's URL; only the Android app does.
 
 ## Local development
 
-Install JDK 17+, Android SDK platform/build-tools 36, and Gradle 8.13. Install
+Install JDK 17+, Android SDK platform 37/build-tools 36, and Gradle 9.3.1. Install
 requirements, set ANDROID_HOME and GRADLE_BIN, then run server.py. Keep this
 development process on loopback; Cloud in a Bottle handles production owner
 authentication. Do not expose an unauthenticated development server.
