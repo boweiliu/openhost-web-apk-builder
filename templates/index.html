@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Web APK Builder</title><link rel="stylesheet" href="/static/style.css"><script defer src="/static/app.js"></script></head>
+<body><main>
+<header><span class="symbol">W</span><span>Personal Android apps</span><a href="https://oh.bowei.in/">Your cloud</a></header>
+<section class="intro"><p class="eyebrow">WEB APK BUILDER</p><h1>Your website.<br>Your Android app.</h1>
+<p class="lede">Paste a website address. Get a signed app with its own icon and private browser storage, powered by Firefox’s engine.</p></section>
+<section class="panel"><form id="build-form">
+<label for="url">Website address</label><input id="url" name="url" type="text" inputmode="url" placeholder="https://example.com" required maxlength="2048" autocomplete="url">
+<label for="name">App name <span class="muted">optional</span></label><input id="name" name="name" placeholder="Use the website’s name" maxlength="60">
+<button type="submit" id="submit">Build Android app</button><p id="feedback" role="status" aria-live="polite"></p>
+</form><p class="footnote">For Android 8+ phones with an ARM64 processor. Android asks you to approve the downloaded app.</p></section>
+<aside><h2>What this first version includes</h2><p>A real installed app, separate site storage, and GeckoView {{ engine }}. No Chrome or Google runtime is bundled.</p>
+<p>Background push notifications, passkeys, Firefox Sync, and extensions are not included. You’ll sign in separately inside each app. A small origin strip keeps the current website visible.</p></aside>
+<section class="build-section"><div class="section-title"><h2>Your apps</h2><span id="count"></span></div><div id="builds"><p class="muted">Loading your builds…</p></div></section>
+<footer><a href="https://github.com/boweiliu/openhost-web-apk-builder">Open-source code</a><span>Built on your own server · Private to your account</span></footer>
+</main></body></html>

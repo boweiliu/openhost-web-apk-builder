@@ -1,0 +1,2 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>App source</title><link rel="stylesheet" href="/static/style.css"></head>
+<body><main><p><a href="/">Back to your apps</a></p><h1>{{ job.name }}</h1><p><a href="{{ job.url }}" rel="noreferrer">Open original website</a></p><pre>{{ job | tojson(indent=2) }}</pre><p><a href="/builds/{{ job.id }}/log">Build log</a></p></main></body></html>
