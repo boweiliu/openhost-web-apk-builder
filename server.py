@@ -4,6 +4,7 @@ from __future__ import annotations
 import hashlib
 import io
 import json
+import logging
 import os
 import secrets
 import shutil
@@ -31,6 +32,7 @@ for directory in (DATA, TEMP, DATA / "keys", DATA / "builds"):
     directory.mkdir(parents=True, exist_ok=True)
 os.chmod(DATA / "keys", 0o700)
 app = Flask(__name__)
+app.logger.setLevel(logging.INFO)
 app.config["MAX_CONTENT_LENGTH"] = 16384
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="apk-build")
@@ -150,11 +152,19 @@ def build(job_id: str):
         apk = work / "app/build/outputs/apk/release/app-release.apk"
         if not apk.is_file():
             raise RuntimeError("The Android build did not produce an APK.")
+        verification = subprocess.run([
+            str(Path(SDK) / "build-tools/36.0.0/apksigner"), "verify", "--verbose", str(apk),
+        ], env=env, capture_output=True, text=True, timeout=60)
+        (output / "signature.txt").write_text(verification.stdout + verification.stderr)
+        if verification.returncode:
+            raise RuntimeError("The APK failed Android's signature verification.")
         shutil.copyfile(apk, output / "app.apk")
-        digest = hashlib.file_digest((output / "app.apk").open("rb"), "sha256").hexdigest()
+        with (output / "app.apk").open("rb") as stream:
+            digest = hashlib.file_digest(stream, "sha256").hexdigest()
         manifest = {**job, "state": "ready", "engine": ENGINE, "sha256": digest}
         (output / "source.json").write_text(json.dumps(manifest, indent=2))
         update_job(job_id, state="ready", sha256=digest, size=apk.stat().st_size)
+        app.logger.info("APK_READY id=%s size=%s sha256=%s", job_id, apk.stat().st_size, digest)
     except Exception as error:
         app.logger.exception("Build %s failed", job_id)
         update_job(job_id, state="failed", error=str(error)[:500])
@@ -208,9 +218,17 @@ def create_build():
             raise ValueError("Use an app name of 1–60 characters.")
     except (ValueError, UnicodeError) as error:
         return jsonify(error=str(error)), 400
+    try:
+        return jsonify(enqueue_build(url, name)), 202
+    except OverflowError as error:
+        return jsonify(error=str(error)), 429
+
+
+def enqueue_build(url: str, name: str):
+    """Persist original inputs and queue one build with a stable update identity."""
     with lock, database() as db:
         if db.execute("SELECT count(*) FROM jobs WHERE state IN ('queued','building')").fetchone()[0] >= 4:
-            return jsonify(error="Four apps are already waiting. Try again after a build finishes."), 429
+            raise OverflowError("Four apps are already waiting. Try again after a build finishes.")
         row = db.execute("SELECT revision FROM sites WHERE url=?", (url,)).fetchone()
         version = row[0] + 1 if row else 1
         db.execute("INSERT INTO sites VALUES (?,?) ON CONFLICT(url) DO UPDATE SET revision=excluded.revision", (url, version))
@@ -218,7 +236,7 @@ def create_build():
         package = "in.bowei.webapps.a" + hashlib.sha256(url.encode()).hexdigest()[:20]
         db.execute("INSERT INTO jobs VALUES (?,?,?,?,?,?,?,NULL,NULL,NULL,?)", (job_id, url, name, package, version, "queued", time.time(), ENGINE))
     executor.submit(build, job_id)
-    return jsonify(get_job(job_id)), 202
+    return get_job(job_id)
 
 
 @app.get("/api/builds/<job_id>")
@@ -250,6 +268,15 @@ def build_log(job_id):
     if not path.exists():
         return "The build has not begun yet.", 200, {"Content-Type": "text/plain"}
     return send_file(path, mimetype="text/plain")
+
+
+if os.environ.get("BOTTLE_APP_NAME"):
+    # A first-install sample lets the owner check installation before creating
+    # an app for a signed-in site. It is created once and stays owner-private.
+    with database() as db:
+        empty = db.execute("SELECT count(*) FROM jobs").fetchone()[0] == 0
+    if empty:
+        enqueue_build("https://example.com/", "Example")
 
 
 if __name__ == "__main__":

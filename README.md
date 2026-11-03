@@ -46,6 +46,10 @@ requirements, set ANDROID_HOME and GRADLE_BIN, then run server.py. Keep this
 development process on loopback; Cloud in a Bottle handles production owner
 authentication. Do not expose an unauthenticated development server.
 
+The first cloud deployment creates an Example APK for https://example.com/ so
+you can check installation without entering a site's login. Every output APK is
+verified with Android's signature verifier before its download becomes ready.
+
 ## License
 
 The packager and shell are available under MPL-2.0. GeckoView and dependencies
