@@ -54,6 +54,7 @@ public final class MainActivity extends Activity {
             }
             LinearLayout root = new LinearLayout(this);
             root.setOrientation(LinearLayout.VERTICAL);
+            root.setFitsSystemWindows(true);
             origin = new TextView(this);
             origin.setTextSize(12);
             origin.setTextColor(0xff445065);
@@ -62,7 +63,8 @@ public final class MainActivity extends Activity {
             origin.setPadding(24, 6, 24, 6);
             origin.setText(Uri.parse(startUrl).getHost() + "   ·   Menu");
             origin.setOnClickListener(v -> showMenu());
-            root.addView(origin, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 40));
+            int barHeight = (int) (40 * getResources().getDisplayMetrics().density);
+            root.addView(origin, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, barHeight));
             view = new GeckoView(this);
             root.addView(view, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
             setContentView(root);

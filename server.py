@@ -90,7 +90,8 @@ def get_job(job_id: str):
 
 def signing_environment() -> dict[str, str]:
     """Keep a persistent signing key; pass passwords only in process environment."""
-    env = os.environ.copy()
+    env = {key: value for key, value in os.environ.items()
+           if key in {"PATH", "JAVA_HOME", "HOME", "LANG", "LC_ALL", "TMPDIR"}}
     password_file = DATA / "keys" / "password"
     if not password_file.exists():
         descriptor = os.open(password_file, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
@@ -276,7 +277,8 @@ if os.environ.get("BOTTLE_APP_NAME"):
     # an app for a signed-in site. It is created once and stays owner-private.
     with database() as db:
         empty = db.execute("SELECT count(*) FROM jobs").fetchone()[0] == 0
-    if empty:
+        sample = db.execute("SELECT state FROM jobs WHERE url='https://example.com/' ORDER BY created DESC LIMIT 1").fetchone()
+    if empty or (sample and sample[0] in {"failed", "interrupted"}):
         enqueue_build("https://example.com/", "Example")
 
 
