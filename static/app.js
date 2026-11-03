@@ -3,10 +3,13 @@ const feedback=document.querySelector('#feedback');
 const list=document.querySelector('#builds');
 const button=document.querySelector('#submit');
 const states={queued:'Waiting to build',building:'Building your APK…',ready:'Ready to install',failed:'Build failed',interrupted:'Build interrupted'};
+let buildIds=[];
+try{const saved=JSON.parse(localStorage.getItem('web-apk-builds')||'[]');if(Array.isArray(saved))buildIds=saved.filter(id=>typeof id==='string'&&/^[a-f0-9]{32}$/.test(id)).slice(-50);}catch{}
+function rememberBuild(id){buildIds=[...buildIds.filter(value=>value!==id),id].slice(-50);try{localStorage.setItem('web-apk-builds',JSON.stringify(buildIds));}catch{}}
 function node(tag,text,cls){const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;}
 async function refresh(){
   try{
-    const response=await fetch('/api/builds');if(!response.ok)throw Error('Sign in again to see your apps.');
+    const response=await fetch(`/api/builds?${new URLSearchParams({ids:buildIds.join(',')})}`);if(!response.ok)throw Error('Could not load your apps. Try again.');
     const jobs=await response.json();list.replaceChildren();document.querySelector('#count').textContent=jobs.length?`${jobs.length} build${jobs.length===1?'':'s'}`:'';
     if(!jobs.length)list.append(node('p','Your first app will appear here.','empty'));
     for(const job of jobs){
@@ -23,7 +26,7 @@ async function refresh(){
 }
 form.addEventListener('submit',async event=>{
   event.preventDefault();button.disabled=true;feedback.textContent='Sending your build…';
-  try{const response=await fetch('/api/builds',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:form.elements.namedItem('url').value,name:form.elements.namedItem('name').value})});const data=await response.json();if(!response.ok)throw Error(data.error||'Could not create the app.');feedback.textContent='Your app is queued. You can leave this page while it builds.';await refresh();}
+  try{const response=await fetch('/api/builds',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:form.elements.namedItem('url').value,name:form.elements.namedItem('name').value})});const data=await response.json();if(!response.ok)throw Error(data.error||'Could not create the app.');rememberBuild(data.id);feedback.textContent='Your app is queued. You can leave this page while it builds.';await refresh();}
   catch(error){feedback.textContent=error.message;}finally{button.disabled=false;}
 });
 refresh();setInterval(refresh,4000);

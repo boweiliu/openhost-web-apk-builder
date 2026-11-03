@@ -1,0 +1,13 @@
+<section class="phone-link" aria-labelledby="phone-link-title">
+  <div class="phone-link-copy">
+    <h2 id="phone-link-title">Open on your phone</h2>
+    <p>Scan the QR code to open this same page.</p>
+    <a id="phone-url" href="{{ request.url }}">{{ request.url }}</a>
+    <button type="button" class="secondary" id="copy-page-link">Copy link</button>
+    <span id="phone-copy-status" role="status" aria-live="polite"></span>
+  </div>
+  <div class="qr-frame">
+    <img id="phone-qr" src="{{ url_for('page_qr', url=request.url) }}" width="160" height="160" alt="QR code to open this page on your phone">
+    <p id="qr-fallback" hidden>Use the link to open this page.</p>
+  </div>
+</section>

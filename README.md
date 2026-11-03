@@ -1,6 +1,6 @@
 # Web APK Builder
 
-A private server-side website-to-Android-app builder, packaged for Cloud in a Bottle.
+A self-hosted website-to-Android-app builder, packaged for Cloud in a Bottle.
 
 Enter an HTTPS URL and an optional app name. The server builds a signed ARM64 APK
 with an independent Android app identity, private browser profile, and Firefox's
@@ -13,8 +13,12 @@ on November 3, 2026. Check Mozilla's Maven metadata before updating the pin.
 
 ## Deploy
 
-Deploy this repository using the Cloud in a Bottle dashboard. All routes remain
-owner-only, including APK downloads. The container builds one app at a time and
+Deploy this repository using the Cloud in a Bottle dashboard. The builder is public
+and requires no login. Anonymous visitors see the Example app and builds remembered
+by their browser; signing in as the host owner also shows all prior builds.
+Individual build, source, log, and APK URLs contain random IDs and can be shared
+with anyone who needs them. Do not treat those links as private after sharing.
+The container builds one app at a time and
 keeps its signing key, build history, artifacts, and Gradle cache in the app's
 persistent data directory. Back that directory up: losing the signing key means
 existing apps cannot receive compatible updates.
@@ -43,8 +47,11 @@ The builder never fetches a submitted site's URL; only the Android app does.
 
 Install JDK 17+, Android SDK platform 37/build-tools 36, and Gradle 9.3.1. Install
 requirements, set ANDROID_HOME and GRADLE_BIN, then run server.py. Keep this
-development process on loopback; Cloud in a Bottle handles production owner
-authentication. Do not expose an unauthenticated development server.
+development process on loopback; Cloud in a Bottle handles production HTTPS
+and the trusted owner header. Do not expose the development server directly.
+
+The page adapts to narrow phone screens. Its top QR code is generated locally
+and contains the exact browser URL, including query parameters and fragments.
 
 The first cloud deployment creates an Example APK for https://example.com/ so
 you can check installation without entering a site's login. Every output APK is
@@ -55,4 +62,4 @@ verified with Android's signature verifier before its download becomes ready.
 The packager and shell are available under MPL-2.0. GeckoView and dependencies
 retain their own licenses. Source: https://github.com/boweiliu/openhost-web-apk-builder
 
-[agent:host-6315db80f4ec41e48d0aafc05a123cf2/minds/workspace=webapk/harness=claude:mngr=agent-4b1c32138415425ca82e04be2c3aaf0c:unknown]
+[agent:host-6315db80f4ec41e48d0aafc05a123cf2/minds/workspace=webapk/harness=claude:mngr=agent-4b1c32138415425ca82e04be2c3aaf0c:gpt-6]

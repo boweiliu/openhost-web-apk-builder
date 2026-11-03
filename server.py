@@ -1,4 +1,4 @@
-"""A private, single-owner URL-to-APK builder for Cloud in a Bottle."""
+"""A self-hosted URL-to-APK builder for Cloud in a Bottle."""
 from __future__ import annotations
 
 import hashlib
@@ -20,6 +20,7 @@ from xml.sax.saxutils import escape
 
 from flask import Flask, abort, jsonify, render_template, request, send_file, url_for
 from PIL import Image, ImageDraw, ImageFont
+import qrcode
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 ROOT = Path(__file__).resolve().parent
@@ -196,11 +197,45 @@ def index():
     return render_template("index.html", engine=ENGINE)
 
 
+@app.get("/qr.png")
+def page_qr():
+    """Generate a QR code for the exact address of a page on this site."""
+    target = request.args.get("url", request.url_root)
+    try:
+        parsed = urlsplit(target)
+    except ValueError:
+        abort(400)
+    if len(target) > 2048 or parsed.scheme not in {"http", "https"} or parsed.netloc != request.host:
+        abort(400)
+    code = qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_M, box_size=8, border=4)
+    try:
+        code.add_data(target)
+        code.make(fit=True)
+    except qrcode.exceptions.DataOverflowError:
+        abort(400)
+    output = io.BytesIO()
+    code.make_image(fill_color="black", back_color="white").save(output, format="PNG")
+    output.seek(0)
+    return send_file(output, mimetype="image/png")
+
+
 @app.get("/api/builds")
 def list_builds():
-    """List recent builds, retaining their original website addresses."""
+    """List this browser's builds and the public Example app."""
     with database() as db:
-        jobs = [dict(row) for row in db.execute("SELECT * FROM jobs ORDER BY created DESC LIMIT 50")]
+        if request.headers.get("X-OpenHost-Is-Owner") == "true":
+            rows = db.execute("SELECT * FROM jobs ORDER BY created DESC LIMIT 50")
+        else:
+            # Random build IDs are shareable links; anonymous visitors cannot
+            # enumerate the owner's existing website addresses or other builds.
+            ids = list(dict.fromkeys(request.args.get("ids", "").split(",")))[:50]
+            ids = [value for value in ids if len(value) == 32 and all(c in "0123456789abcdef" for c in value)]
+            placeholders = ",".join("?" for _ in ids) or "NULL"
+            rows = db.execute(
+                f"SELECT * FROM jobs WHERE id IN ({placeholders}) OR id=("
+                "SELECT id FROM jobs WHERE url='https://example.com/' AND name='Example' "
+                "ORDER BY created ASC LIMIT 1) ORDER BY created DESC LIMIT 50", ids)
+        jobs = [dict(row) for row in rows]
     return jsonify(jobs)
 
 
@@ -274,7 +309,7 @@ def build_log(job_id):
 
 if os.environ.get("BOTTLE_APP_NAME"):
     # A first-install sample lets the owner check installation before creating
-    # an app for a signed-in site. It is created once and stays owner-private.
+    # an app for a signed-in site. It is the only publicly listed sample.
     with database() as db:
         empty = db.execute("SELECT count(*) FROM jobs").fetchone()[0] == 0
         sample = db.execute("SELECT state FROM jobs WHERE url='https://example.com/' ORDER BY created DESC LIMIT 1").fetchone()

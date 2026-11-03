@@ -1,7 +1,7 @@
 [app]
 name = "web-apk-builder"
 version = "0.1.0"
-description = "Build private Android apps for websites using Firefox's GeckoView engine."
+description = "Build Android apps for websites using Firefox's GeckoView engine."
 
 [runtime.container]
 image = "Dockerfile"
@@ -9,7 +9,7 @@ port = 8080
 
 [routing]
 health_check = "/health"
-public_paths = []
+public_paths = ["/"]
 
 [resources]
 memory_mb = 3072
