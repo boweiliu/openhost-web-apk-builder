@@ -71,7 +71,10 @@ def normalize_url(value: str) -> str:
     if parsed.port and parsed.port != 443:
         raise ValueError("This first version supports standard HTTPS addresses.")
     host = parsed.hostname.encode("idna").decode("ascii")
-    if len(host) > 253 or any(c not in "abcdefghijklmnopqrstuvwxyz0123456789.-" for c in host.lower()):
+    # Underscores are not legal in strict host names, but real sites use them
+    # (Imbue Studio share links start with "system_interface-") and browsers,
+    # including GeckoView, load them.
+    if len(host) > 253 or any(c not in "abcdefghijklmnopqrstuvwxyz0123456789.-_" for c in host.lower()):
         raise ValueError("Enter a valid website host name.")
     return urlunsplit(("https", host.lower(), parsed.path or "/", parsed.query, parsed.fragment))
 
